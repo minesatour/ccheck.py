@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+valid_cards.txt
+venv/
+env/
+.venv/
+.idea/
+*.iml
+*.log
+*.DS_Store
