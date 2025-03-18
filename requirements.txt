@@ -1,2 +1,4 @@
 requests==2.31.0
 parse==1.20.2
+beautifulsoup4==4.12.3
+PySocks==1.7.1  # For Tor if needed
